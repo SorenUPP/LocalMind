@@ -8,6 +8,7 @@ import duckdb
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from app.schemas.ast import QueryPlan
 from app.compiler.validate import semantic_validate, ValidationError
@@ -21,8 +22,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 catalog = Catalog(os.getenv("LOCALMIND_DB_PATH", "data/localmind.duckdb"))
@@ -34,6 +35,11 @@ CANNOT_ANSWER_RESPONSE = {
     "message": "I wasn't able to work out how to answer that one. "
                 "Try rephrasing your question, or asking something a bit simpler or more specific.",
 }
+
+
+class AskRequest(BaseModel):
+    user_query: str
+    dataset: str
 
 
 def _rows_from_df(df: pd.DataFrame) -> list[dict]:
@@ -117,7 +123,7 @@ def _execute_plan(plan: QueryPlan):
         log_unresolved_prompt(str(plan.model_dump()), plan.dataset, reason="execution_failed", details={"error": str(e)})
         return None
     except Exception as e:
-        # Safety net: same principle as compile - never let an internal error surface raw.
+    
         log_unresolved_prompt(str(plan.model_dump()), plan.dataset, reason="unexpected_error", details={"error": str(e)})
         return None
 
@@ -125,8 +131,8 @@ def _execute_plan(plan: QueryPlan):
 
 
 @app.post("/api/v1/queries/compile")
-async def compile_query(user_query: str, dataset: str):
-    plan, _context = await _compile_plan(user_query, dataset)
+async def compile_query(payload: AskRequest):
+    plan, _context = await _compile_plan(payload.user_query, payload.dataset)
     if plan is None:
         return CANNOT_ANSWER_RESPONSE
     return {"request_id": str(uuid.uuid4()), "status": "validated", "ast": plan.model_dump()}
@@ -139,8 +145,9 @@ async def execute_query(plan: QueryPlan):
     return {"status": "success", "rows": _rows_from_df(df), "row_count": len(df)}
 
 @app.post("/api/v1/queries/ask")
-async def ask_query(user_query: str, dataset: str):
+async def ask_query(payload: AskRequest):
     """Compiles, executes, and synthesizes a plain-language answer in one call."""
+    user_query, dataset = payload.user_query, payload.dataset
     plan, context = await _compile_plan(user_query, dataset)
     if plan is None:
         return CANNOT_ANSWER_RESPONSE

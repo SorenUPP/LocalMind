@@ -10,6 +10,8 @@ services/api/**/__pycache__/
 
 # Local runtime data and secrets
 *.duckdb
+*.duckdb.wal
+services/api/data/unresolved_prompts.jsonl
 .env
 .env.*
 !.env.example
@@ -17,4 +19,3 @@ services/api/**/__pycache__/
 # Tooling and operating-system files
 *.tsbuildinfo
 .DS_Store
-

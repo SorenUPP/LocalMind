@@ -120,7 +120,11 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/v1/queries/ask?user_query=${encodeURIComponent(trimmedQuery)}&dataset=sales`, { method: "POST" });
+      const response = await fetch(`${API_URL}/api/v1/queries/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_query: trimmedQuery, dataset: "sales" }),
+      });
       if (!response.ok) throw new Error(await readError(response));
 
       const asked: AskResponse = await response.json();

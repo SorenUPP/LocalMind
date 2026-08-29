@@ -26,8 +26,9 @@ def _build_filter_clause(node, params: list) -> list[str]:
         elif p.op == "is_not_null":
             where_clauses.append(f"{col} IS NOT NULL")
         elif p.op == "contains":
-            where_clauses.append(f"{col} ILIKE ?")
-            params.append(f"%{p.value}%")
+            where_clauses.append(f"{col} ILIKE ? ESCAPE '\\'")
+            escaped = str(p.value).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            params.append(f"%{escaped}%")
         elif p.op == "in":
             placeholders = ",".join(["?"] * len(p.value))
             where_clauses.append(f"{col} IN ({placeholders})")
