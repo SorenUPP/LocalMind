@@ -1,0 +1,13 @@
+services:
+  api:
+    build: ./services/api
+    ports: ["8000:8000"]
+    volumes: ["./services/api/data:/app/data"]
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434/api/generate}
+  web:
+    build: ./apps/web
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on: [api]

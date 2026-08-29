@@ -1,0 +1,20 @@
+# Frontend build output and dependencies
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+
+# Python environments and generated files
+services/api/.venv/
+services/api/**/__pycache__/
+*.py[cod]
+
+# Local runtime data and secrets
+*.duckdb
+.env
+.env.*
+!.env.example
+
+# Tooling and operating-system files
+*.tsbuildinfo
+.DS_Store
+
