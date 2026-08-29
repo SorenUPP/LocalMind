@@ -173,8 +173,8 @@ export default function Home() {
           <h1 className="max-w-3xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] sm:text-4xl lg:text-5xl">A more direct way to read your data.</h1>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <div className="motion-enter workspace-panel border border-[#c8c8c1] p-5 lg:p-6">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+          <div className="motion-enter workspace-panel min-w-0 border border-[#c8c8c1] p-5 lg:p-6">
             <div className="flex items-start justify-between gap-4 border-b border-[#deded7] pb-4">
               <div><p className="text-sm font-semibold">New analysis</p><p className="mt-1 text-sm text-[#6b6c64]">Sales dataset · validated before execution</p></div>
               <span className="font-mono text-xs text-[#6b6c64]">01</span>
@@ -219,7 +219,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div aria-busy={loading} aria-live="polite" className="motion-enter-delayed sticky top-6 border border-[#1b1c1a] p-5 lg:p-6">
+          <div aria-busy={loading} aria-live="polite" className="motion-enter-delayed sticky top-6 min-w-0 border border-[#1b1c1a] p-5 lg:p-6">
             <div className="flex flex-col gap-3 border-b-2 border-[#1b1c1a] pb-4 sm:flex-row sm:items-end sm:justify-between">
               <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9b4b28]">{loading ? "Running…" : hasRun ? "Query complete" : "Awaiting a question"}</p><h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] lg:text-3xl">Results</h2></div>
               <div className="flex items-center gap-3">
@@ -230,7 +230,7 @@ export default function Home() {
 
             {!loading && answer && (
               <div className="mt-4 border-l-2 border-[#1b1c1a] bg-[#eeece5] px-5 py-4">
-                <p className="text-sm leading-6 text-[#30312e]">{answer}</p>
+                <p className="text-sm leading-6 text-[#30312e] break-words">{answer}</p>
               </div>
             )}
             {!loading && !answer && answerNote && (
