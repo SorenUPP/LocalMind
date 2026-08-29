@@ -32,6 +32,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<ResultRow[]>([]);
   const [rowCount, setRowCount] = useState<number | null>(null);
+  const [hasRun, setHasRun] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -59,6 +60,7 @@ export default function Home() {
       setSelectedFile(null);
       setResult([]);
       setRowCount(null);
+      setHasRun(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (caughtError: unknown) {
       setError(caughtError instanceof Error ? caughtError.message : "The CSV could not be imported.");
@@ -106,6 +108,7 @@ export default function Home() {
     } catch (caughtError: unknown) {
       setError(caughtError instanceof Error ? caughtError.message : "Something went wrong while running the analysis.");
     } finally {
+      setHasRun(true);
       setLoading(false);
     }
   }
@@ -120,71 +123,68 @@ export default function Home() {
           <p className="text-xs uppercase tracking-[0.14em] text-[#676860]">Sales data / Local workspace</p>
         </nav>
 
-        <header className="motion-enter-delayed grid gap-10 py-16 lg:grid-cols-[1.35fr_0.65fr] lg:py-24">
-          <div id="top">
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-[#9b4b28]">Ask. Inspect. Decide.</p>
-            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.065em] sm:text-6xl lg:text-8xl">A more direct way to read your data.</h1>
-          </div>
-          <div className="self-end border-l-2 border-[#1b1c1a] pl-5 text-base leading-7 text-[#55564f]">
-            LocalMind converts a question into a checked query against your local sales dataset. You get the answer, without needing to write SQL.
-          </div>
+        <header className="motion-enter-delayed py-8 lg:py-10" id="top">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#9b4b28]">Ask. Inspect. Decide.</p>
+          <h1 className="max-w-3xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] sm:text-4xl lg:text-5xl">A more direct way to read your data.</h1>
         </header>
 
-        <section className="grid border-y border-[#c8c8c1] lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="motion-enter workspace-panel border-b border-[#c8c8c1] p-5 lg:border-b-0 lg:border-r lg:p-8">
-            <div className="flex items-start justify-between gap-4 border-b border-[#deded7] pb-5">
+        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div className="motion-enter workspace-panel border border-[#c8c8c1] p-5 lg:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[#deded7] pb-4">
               <div><p className="text-sm font-semibold">New analysis</p><p className="mt-1 text-sm text-[#6b6c64]">Sales dataset · validated before execution</p></div>
               <span className="font-mono text-xs text-[#6b6c64]">01</span>
             </div>
 
-            <label className="mt-7 block text-xs font-semibold uppercase tracking-[0.14em] text-[#595a54]" htmlFor="query">Your question</label>
-            <textarea className="mt-3 min-h-40 w-full resize-y border border-[#bfc0b8] bg-transparent px-4 py-4 text-lg leading-8 outline-none transition placeholder:text-[#9a9b94] focus:border-[#1b1c1a]" id="query" onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void runQuery(); }} placeholder="What was average revenue by region?" value={query} />
+            <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.14em] text-[#595a54]" htmlFor="query">Your question</label>
+            <textarea className="mt-3 min-h-28 w-full resize-y border border-[#bfc0b8] bg-transparent px-4 py-3 text-base leading-7 outline-none transition placeholder:text-[#9a9b94] focus:border-[#1b1c1a]" id="query" onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void runQuery(); }} placeholder="What was average revenue by region?" value={query} />
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
               <p className="font-mono text-xs text-[#777870]">Ctrl/Cmd + Enter to run</p>
               <button className="run-button inline-flex items-center gap-2 border border-[#1b1c1a] bg-[#1b1c1a] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:border-[#989993] disabled:bg-[#989993]" disabled={loading} onClick={() => void runQuery()} type="button">{loading ? "Analysing request…" : "Run analysis"}<Arrow /></button>
             </div>
-          </div>
 
-          <aside className="motion-enter-delayed p-5 lg:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#595a54]">Start with a prompt</p>
-            <div className="mt-5 divide-y divide-[#d6d7d0] border-y border-[#d6d7d0]">
-              {EXAMPLES.map((example, index) => (
-                <button className="prompt-option flex w-full items-center justify-between gap-4 py-4 text-left text-sm font-medium" key={example} onClick={() => setQuery(example)} type="button"><span><span className="mr-3 font-mono text-xs text-[#9b4b28]">0{index + 1}</span>{example}</span><Arrow /></button>
-              ))}
+            {error && <p className="motion-enter mt-6 border-l-2 border-[#9b4b28] bg-[#f1e2d8] px-5 py-4 text-sm text-[#732f19]" role="alert">{error}</p>}
+
+            <div className="mt-6 border-t border-[#d6d7d0] pt-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#595a54]">Start with a prompt</p>
+              <div className="mt-4 divide-y divide-[#d6d7d0] border-y border-[#d6d7d0]">
+                {EXAMPLES.map((example, index) => (
+                  <button className="prompt-option flex w-full items-center justify-between gap-4 py-3 text-left text-sm font-medium" key={example} onClick={() => setQuery(example)} type="button"><span><span className="mr-3 font-mono text-xs text-[#9b4b28]">0{index + 1}</span>{example}</span><Arrow /></button>
+                ))}
+              </div>
             </div>
-            <div className="mt-8 border-t border-[#d6d7d0] pt-5 text-sm leading-6 text-[#686963]"><p className="font-semibold text-[#30312e]">A practical guardrail</p><p className="mt-2">Questions are mapped to the columns that exist in this dataset before anything runs.</p></div>
-            <div className="mt-8 border-t border-[#d6d7d0] pt-5">
+
+            <div className="mt-6 border-t border-[#d6d7d0] pt-5">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#595a54]">Use your own data</p>
               <p className="mt-2 text-sm leading-6 text-[#686963]">Import a CSV to replace the sample sales dataset. Your file stays on this machine.</p>
               <input accept=".csv,text/csv" className="mt-4 block w-full text-xs text-[#55564f] file:mr-3 file:border file:border-[#1b1c1a] file:bg-transparent file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1b1c1a] hover:file:bg-[#eeece5]" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} ref={fileInputRef} type="file" />
               <button className="mt-3 inline-flex items-center gap-2 border border-[#1b1c1a] px-4 py-2 text-xs font-semibold transition hover:bg-[#1b1c1a] hover:text-white disabled:cursor-not-allowed disabled:border-[#aaa9a2] disabled:text-[#8b8c85]" disabled={!selectedFile || uploading} onClick={() => void uploadDataset()} type="button">{uploading ? "Importing CSV…" : "Import CSV"}<Arrow /></button>
               {uploadSummary && <p className="mt-3 border-l-2 border-[#9b4b28] pl-3 text-xs leading-5 text-[#55564f]" role="status">{uploadSummary}</p>}
             </div>
-          </aside>
-        </section>
 
-        {error && <p className="motion-enter mt-6 border-l-2 border-[#9b4b28] bg-[#f1e2d8] px-5 py-4 text-sm text-[#732f19]" role="alert">{error}</p>}
+            
+          </div>
 
-        {rowCount !== null && (
-          <section aria-live="polite" className="motion-enter mt-14">
-            <div className="flex flex-col gap-4 border-b-2 border-[#1b1c1a] pb-5 sm:flex-row sm:items-end sm:justify-between">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9b4b28]">Query complete</p><h2 className="mt-2 text-4xl font-semibold tracking-[-0.045em]">Results</h2></div>
-              <p className="font-mono text-sm text-[#595a54]">{rowCount} {rowCount === 1 ? "record" : "records"} returned</p>
+          <div aria-live="polite" className="motion-enter-delayed sticky top-6 border border-[#1b1c1a] p-5 lg:p-6">
+            <div className="flex flex-col gap-3 border-b-2 border-[#1b1c1a] pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9b4b28]">{hasRun ? "Query complete" : "Awaiting a question"}</p><h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] lg:text-3xl">Results</h2></div>
+              {rowCount !== null && <p className="font-mono text-sm text-[#595a54]">{rowCount} {rowCount === 1 ? "record" : "records"} returned</p>}
             </div>
 
-            {result.length === 0 ? (
-              <div className="border-b border-[#c8c8c1] py-12"><p className="text-lg font-medium">No matching records.</p><p className="mt-2 text-sm text-[#6b6c64]">Try a wider time range or a different measure.</p></div>
+            {!hasRun ? (
+              <div className="py-16 text-center"><p className="text-base font-medium text-[#55564f]">Run an analysis to see results here.</p><p className="mt-2 text-sm text-[#8b8c85]">Try one of the example prompts on the left.</p></div>
+            ) : result.length === 0 ? (
+              <div className="py-12"><p className="text-lg font-medium">No matching records.</p><p className="mt-2 text-sm text-[#6b6c64]">Try a wider time range or a different measure.</p></div>
             ) : (
-              <div className="overflow-x-auto border-b border-[#c8c8c1]">
+              <div className="mt-2 max-h-[32rem] overflow-auto">
                 <table className="w-full min-w-max text-left text-sm">
-                  <thead className="border-b border-[#c8c8c1] font-mono text-xs uppercase tracking-[0.1em] text-[#62635c]"><tr>{columns.map((column) => <th className="px-4 py-4 font-medium first:pl-0" key={column}>{column.replaceAll("_", " ")}</th>)}</tr></thead>
-                  <tbody className="divide-y divide-[#deded7]">{result.map((row, index) => <tr className="transition-colors hover:bg-[#eeece5]" key={index}>{columns.map((column) => <td className="px-4 py-4 first:pl-0" key={column}>{row[column] === null ? <span className="text-[#999a93]">—</span> : String(row[column])}</td>)}</tr>)}</tbody>
+                  <thead className="sticky top-0 border-b border-[#c8c8c1] bg-[#f7f6f2] font-mono text-xs uppercase tracking-[0.1em] text-[#62635c]"><tr>{columns.map((column) => <th className="px-4 py-3 font-medium first:pl-0" key={column}>{column.replaceAll("_", " ")}</th>)}</tr></thead>
+                  <tbody className="divide-y divide-[#deded7]">{result.map((row, index) => <tr className="transition-colors hover:bg-[#eeece5]" key={index}>{columns.map((column) => <td className="px-4 py-3 first:pl-0" key={column}>{row[column] === null ? <span className="text-[#999a93]">—</span> : String(row[column])}</td>)}</tr>)}</tbody>
                 </table>
               </div>
             )}
-          </section>
-        )}
+          </div>
+        </section>
       </div>
     </main>
   );

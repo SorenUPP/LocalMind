@@ -9,12 +9,12 @@ class ColumnRef(BaseModel):
 
 class Predicate(BaseModel):
     column: str
-    op: Literal["eq", "neq", "gt", "gte", "lt", "lte", "contains", "in"]
-    value: ScalarValue | list[ScalarValue]
+    op: Literal["eq", "neq", "gt", "gte", "lt", "lte", "contains", "in", "is_null", "is_not_null"]
+    value: ScalarValue | list[ScalarValue] | None = None
 
 class AggregateMetric(BaseModel):
     column: str
-    fn: Literal["sum", "mean", "count", "min", "max", "stddev"]
+    fn: Literal["sum", "mean", "count", "min", "max", "stddev", "median"]
     alias: Identifier
 
 class SortKey(BaseModel):

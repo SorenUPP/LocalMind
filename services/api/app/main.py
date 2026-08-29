@@ -1,9 +1,11 @@
+import json
 import os
 import uuid
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import duckdb
+import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,6 +34,13 @@ CANNOT_ANSWER_RESPONSE = {
     "message": "I wasn't able to work out how to answer that one. "
                 "Try rephrasing your question, or asking something a bit simpler or more specific.",
 }
+
+
+def _rows_from_df(df: pd.DataFrame) -> list[dict]:
+    """Converts a query result DataFrame to JSON-safe rows. NaN/NaT (e.g. the
+    first row of a pct_change window, which has no prior period) become
+    null instead of a float NaN that the JSON encoder would reject."""
+    return json.loads(df.to_json(orient="records", date_format="iso"))
 
 
 @app.post("/api/v1/datasets/sales/upload")
@@ -85,8 +94,6 @@ async def _compile_plan(user_query: str, dataset: str) -> tuple[QueryPlan | None
         log_unresolved_prompt(e.user_query, e.dataset, reason="compile_failed", details=e.diagnostic)
         return None, context
     except Exception as e:
-        # Safety net: no matter what goes wrong inside the LLM/compiler pipeline,
-        # the user should never see a raw error or partial model output.
         log_unresolved_prompt(user_query, dataset, reason="unexpected_error", details={"error": str(e)})
         return None, context
 
@@ -129,7 +136,7 @@ async def execute_query(plan: QueryPlan):
     df = _execute_plan(plan)
     if df is None:
         return CANNOT_ANSWER_RESPONSE
-    return {"status": "success", "rows": df.to_dict(orient="records"), "row_count": len(df)}
+    return {"status": "success", "rows": _rows_from_df(df), "row_count": len(df)}
 
 @app.post("/api/v1/queries/ask")
 async def ask_query(user_query: str, dataset: str):
@@ -142,7 +149,7 @@ async def ask_query(user_query: str, dataset: str):
     if df is None:
         return CANNOT_ANSWER_RESPONSE
 
-    rows = df.to_dict(orient="records")
+    rows = _rows_from_df(df)
     base_response = {
         "request_id": str(uuid.uuid4()),
         "status": "success",
@@ -154,8 +161,6 @@ async def ask_query(user_query: str, dataset: str):
     try:
         answer = await synthesize_answer(user_query, context, rows)
     except LLMCompilationError as e:
-        # The data itself was retrieved successfully; only the narrative
-        # summary failed. Surface the rows rather than discarding the result.
         log_unresolved_prompt(user_query, dataset, reason="synthesis_failed", details={"error": str(e)})
         return {
             **base_response,

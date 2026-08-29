@@ -21,7 +21,11 @@ def _build_filter_clause(node, params: list) -> list[str]:
     where_clauses = []
     for p in node.predicates:
         col = quote_identifier(p.column)
-        if p.op == "contains":
+        if p.op == "is_null":
+            where_clauses.append(f"{col} IS NULL")
+        elif p.op == "is_not_null":
+            where_clauses.append(f"{col} IS NOT NULL")
+        elif p.op == "contains":
             where_clauses.append(f"{col} ILIKE ?")
             params.append(f"%{p.value}%")
         elif p.op == "in":

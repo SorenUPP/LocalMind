@@ -77,6 +77,8 @@ def semantic_validate(plan: QueryPlan, allowed_columns: set[str], expected_datas
                     errors.append({"path": f"nodes.{i}.predicates.{j}.column", "code": "unknown_column", "allowed": sorted(allowed_columns)})
                 if p.op == "in" and (not isinstance(p.value, list) or not p.value):
                     errors.append({"path": f"nodes.{i}.predicates.{j}.value", "code": "non_empty_list_required"})
+                if p.op in {"eq", "neq", "gt", "gte", "lt", "lte"} and p.value is None:
+                    errors.append({"path": f"nodes.{i}.predicates.{j}.value", "code": "value_required"})
                 if p.op == "contains" and not isinstance(p.value, str):
                     errors.append({"path": f"nodes.{i}.predicates.{j}.value", "code": "string_required"})
         elif node.kind == "time_bucket":
