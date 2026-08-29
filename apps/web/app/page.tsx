@@ -55,11 +55,12 @@ function formatCell(column: string, value: CellValue): { text: string; tone: "ne
 function toCsv(columns: string[], rows: ResultRow[]): string {
   const escape = (value: CellValue) => {
     if (value === null) return "";
-    const str = String(value);
-    return /[",\n]/.test(str) ? `"${str.replaceAll('"', '""')}"` : str;
+    let str = String(value);
+    if (/^[=+\-@]/.test(str)) str = `'${str}`;
+    return /[",\n\r]/.test(str) ? `"${str.replaceAll('"', '""')}"` : str;
   };
   const lines = [columns.join(","), ...rows.map((row) => columns.map((column) => escape(row[column])).join(","))];
-  return lines.join("\n");
+  return lines.join("\r\n");
 }
 
 export default function Home() {
@@ -148,15 +149,16 @@ export default function Home() {
   }
 
   function downloadCsv() {
-    if (result.length === 0) return;
-    const csv = toCsv(columns, result);
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "localmind-results.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
+  if (result.length === 0) return;
+  const csv = toCsv(columns, result);
+  const blob = new Blob(["\uFEFF" + "sep=,\r\n" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "localmind-results.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
   const columns = result.length > 0 ? Object.keys(result[0]) : [];
 
